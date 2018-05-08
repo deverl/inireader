@@ -13,5 +13,5 @@ clean:
 	rm -rf inireader *.o inireader.dSYM
 
 test: inireader
-	./inireader /Users/dstokes1/Downloads/intuit_creds_plain.ini TSHEETS_INTUIT_PROD CLIENT_SECRET
+	./inireader sample.ini  CLIENT   phone
 

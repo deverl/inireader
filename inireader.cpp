@@ -1,25 +1,104 @@
+// This command line program just reads a named value from a section in an ini
+// file.
+//
+// usage: inireader <path-to-ini-file>  <section-name>  <value-name>
+//
+// For example, if the ini file was as shown here:
+//
+//     --------------------------------------------------------------------
+//     ; File: sample.ini
+// 
+//     [USER]
+//     email = "somebody@domain.com"
+//     [CLIENT]
+//     phone = "555-555-1212"
+// 
+//     --------------------------------------------------------------------
+//
+// You could read the client's phone number using this command:
+//
+// $ inireader sample.ini  CLIENT  phone
+//
+// The phone number would be printed on the terminal
+
+
 #include <iostream>
 #include <fstream>
-// #include <stdio.h>
 #include <string>
-#include <vector>
 
 
 
+// The result returned from parse_section_entry()
+class Entry
+{
+public:
+    Entry()
+    {
+    }
+
+    Entry(const std::string& name, const std::string& value)
+    {
+        this->n = name;
+        this->v = value;
+    }
+
+public:
+    bool valid()
+    {
+        return !n.empty() && !v.empty();
+    }
+
+    std::string name()
+    {
+        return this->n;
+    }
+
+    std::string value()
+    {
+        return this->v;
+    }
+
+protected:
+    std::string n;
+    std::string v;
+};
+
+
+// Remove leading and trailing whitespace from a string.
 
 std::string trim(const std::string& str)
 {
-    size_t first = str.find_first_not_of(' ');
+    size_t first = str.find_first_not_of(" \t");
     if (std::string::npos == first)
     {
         return str;
     }
-    size_t last = str.find_last_not_of(' ');
+    size_t last = str.find_last_not_of(" \t");
     return str.substr(first, (last - first + 1));
 }
 
 
 
+
+
+
+// Removes leading and trailing quotes from the string (if both are present)
+std::string unquote(const std::string& str) {
+    if (!str.empty()) {
+        const char quote('"');
+        if (str[0] == quote && str[str.length() - 1] == quote)
+        {
+            return str.substr(1, str.length() - 2);
+        }
+    }
+    return str;
+}
+
+
+
+// Returns true if the given str is a section entry from an ini file (begins
+// with '[' and ends with ']') AND if the string between the brackets matches
+// the specified section name.
 bool is_section(const std::string& str, const std::string& section_name)
 {
     bool ret(false);
@@ -45,9 +124,10 @@ bool is_section(const std::string& str, const std::string& section_name)
 
 
 
-std::vector<std::string> parse_section_entry(const std::string& line)
+// Parses a section entry (if it is an entry) and sets the values in an instance of Entry which becomes the return value.
+// If the section is not an entry, nullptr is returned.
+Entry * parse_section_entry(const std::string& line)
 {
-    std::vector<std::string> v;
     std::string s(trim(line));
 
     if(!s.empty())
@@ -67,29 +147,17 @@ std::vector<std::string> parse_section_entry(const std::string& line)
 
         s = s.substr(i + 1);
 
-        s = trim(s);
+        s = unquote(trim(s));
 
-        v.push_back(name);
-        v.push_back(s);
+        Entry *e = new Entry(name, s);
+
+        return e;
     }
 
-    return v;
+    return nullptr;
 }
 
 
-
-
-
-std::string unquote(const std::string& str) {
-    if (!str.empty()) {
-        const char quote('"');
-        if (str[0] == quote && str[str.length() - 1] == quote)
-        {
-            return str.substr(1, str.length() - 2);
-        }
-    }
-    return str;
-}
 
 
 
@@ -136,12 +204,15 @@ int main(int argc, char *argv[])
                     continue;
                 }
                 else if (in_section) {
-                    std::vector<std::string> v(parse_section_entry(line));
+                    Entry *e(parse_section_entry(line));
 
-                    if(v.size() == 2 && v[0] == name)
+                    if(e)
                     {
-                        std::string value = unquote(v[1]);
-                        std::cout << value << std::endl;
+                        if (e->valid() && e->name() == name) {
+                            std::cout << e->value() << std::endl;
+                        }
+
+                        delete e;
                     }
                 }
                 else if(is_section(line, section)) {
