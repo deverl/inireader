@@ -57,7 +57,7 @@ clean:
 
 
 test: $(OBJDIR)/inireader
-	./inireader sample.ini  CLIENT   phone
+	$(OBJDIR)/inireader sample.ini  CLIENT   phone
 
 
 # Currently only works on the mac platform.
