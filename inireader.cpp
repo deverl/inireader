@@ -27,7 +27,6 @@
 #include <string>
 
 
-
 // The result returned from parse_section_entry()
 class Entry
 {
@@ -165,7 +164,7 @@ Entry * parse_section_entry(const std::string& line)
 int main(int argc, char *argv[])
 {
     int ret(0);
-
+    
     if(argc == 4)
     {
         std::string path(argv[1]);
