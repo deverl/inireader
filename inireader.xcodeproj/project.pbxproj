@@ -41,7 +41,7 @@
 		FEFC21E220A2643F0024E995 = {
 			isa = PBXGroup;
 			children = (
-				FEFC21ED20A2643F0024E995 /* inireader */,
+				FEFC21EE20A2643F0024E995 /* inireader.cpp */,
 				FEFC21EC20A2643F0024E995 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -52,14 +52,6 @@
 				FEFC21EB20A2643F0024E995 /* inireader */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		FEFC21ED20A2643F0024E995 /* inireader */ = {
-			isa = PBXGroup;
-			children = (
-				FEFC21EE20A2643F0024E995 /* inireader.cpp */,
-			);
-			path = inireader;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
