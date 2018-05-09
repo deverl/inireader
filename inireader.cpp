@@ -27,7 +27,9 @@
 #include <string>
 
 
-// The result returned from parse_section_entry()
+
+
+// Contains a name value pair, as parsed by the parse_section_entry() function.
 class Entry
 {
 public:
@@ -47,6 +49,12 @@ public:
         return !n.empty() && !v.empty();
     }
 
+    void clear()
+    {
+        this->n.clear();
+        this->v.clear();
+    }
+
     std::string name()
     {
         return this->n;
@@ -58,9 +66,23 @@ public:
     }
 
 protected:
+    void set_name(const std::string& name)
+    {
+        this->n = name;
+    }
+
+    void set_value(const std::string& value)
+    {
+        this->v = value;
+    }
+
+    friend bool parse_section_entry(const std::string& line, Entry& e);
+
+protected:
     std::string n;
     std::string v;
 };
+
 
 
 // Remove leading and trailing whitespace from a string.
@@ -95,6 +117,41 @@ std::string unquote(const std::string& str) {
 
 
 
+
+
+// Gets the next non-empty, non-comment line from the file.
+// Returns the string length of the fetched line.
+int get_line(std::ifstream& f, std::string& line)
+{
+    line.clear();
+
+    while(f.good() && !f.eof())
+    {
+        std::getline(f, line);
+        if (line.empty()) {
+            // The line was completely empty.
+            continue;
+        }
+        line = trim(line);
+        if (line.empty()) {
+            // The line consisted only of whitespace.
+            continue;
+        }
+        if(line[0] == ';') {
+            // This is a comment line.
+            continue;
+        }
+        return line.length();
+    }
+
+    return 0;
+}
+
+
+
+
+
+
 // Returns true if the given str is a section entry from an ini file (begins
 // with '[' and ends with ']') AND if the string between the brackets matches
 // the specified section name.
@@ -125,35 +182,46 @@ bool is_section(const std::string& str, const std::string& section_name)
 
 // Parses a section entry (if it is an entry) and sets the values in an instance of Entry which becomes the return value.
 // If the section is not an entry, nullptr is returned.
-Entry * parse_section_entry(const std::string& line)
+bool parse_section_entry(const std::string& line, Entry& e)
 {
-    std::string s(trim(line));
+    e.clear();
+    // First, make sure that the line contains an '=' character.
 
-    if(!s.empty())
+    std::string::size_type idx(line.find_first_of('='));
+
+    if (idx != std::string::npos)
     {
-        // Read the first token. This is up to the first '=' character, and after stripping whitespace.
+        std::string s(trim(line));
 
-        std::string name;
+        if(!s.empty())
+        {
+            // Read the first token. This is up to the first '=' character, and after stripping whitespace.
 
-        int i(0);
+            std::string name;
 
-        while(s[i] != '=') {
-            name += s[i];
-            ++i;
+            int i(0);
+
+            while(s[i] != '=') {
+                name += s[i];
+                ++i;
+            }
+
+            name = trim(name);
+
+            // We'll assume that everything after the '=' character is the value (after trimming whitespace).
+
+            s = s.substr(i + 1);
+
+            s = unquote(trim(s));
+
+            e.set_name(name);
+            e.set_value(s);
+
+            return true;
         }
-
-        name = trim(name);
-
-        s = s.substr(i + 1);
-
-        s = unquote(trim(s));
-
-        Entry *e = new Entry(name, s);
-
-        return e;
     }
 
-    return nullptr;
+    return false;
 }
 
 
@@ -178,21 +246,15 @@ int main(int argc, char *argv[])
             std::string line;
             bool done(false);
             bool in_section(false);
+            Entry e;
 
             while(!done && f.good() && !f.eof())
             {
-                std::getline(f, line);
+                get_line(f, line);
+
                 if (line.empty()) {
-                    // The line was completely empty.
-                    continue;
-                }
-                line = trim(line);
-                if (line.empty()) {
-                    // The line consisted only of whitespace.
-                    continue;
-                }
-                if(line[0] == ';') {
-                    // This is a comment line.
+                    // The line was completely empty. If this happens, we should be at the end of the file.
+                    // Just continue and f.eof() should terminate the loop on the next iteration.
                     continue;
                 }
                 if(line[0] == '[' && in_section) {
@@ -203,15 +265,10 @@ int main(int argc, char *argv[])
                     continue;
                 }
                 else if (in_section) {
-                    Entry *e(parse_section_entry(line));
+                    parse_section_entry(line, e);
 
-                    if(e)
-                    {
-                        if (e->valid() && e->name() == name) {
-                            std::cout << e->value() << std::endl;
-                        }
-
-                        delete e;
+                    if (e.valid() && e.name() == name) {
+                        std::cout << e.value() << std::endl;
                     }
                 }
                 else if(is_section(line, section)) {
