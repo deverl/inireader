@@ -1,9 +1,19 @@
 
 PLATFORM := $(shell uname)
 
-CPP := g++-8
+CPP_FLAGS = -c -Wall -pedantic --std=c++11 -DPLATFORM=$(PLATFORM)
 
-CPP_FLAGS = -c -Wall -pedantic --std=c++11
+ifeq ($(PLATFORM),Darwin)
+    INSTALL_TARGET=~/nexus/bin/mac
+    CPP := g++-8
+else
+    CPP := g++
+endif
+
+ifeq ($(PLATFORM),Linux)
+    CPP_FLAGS += -DLINUX -D_LINUX -D__LINUX__
+    INSTALL_TARGET=~/nexus/bin/linux
+endif
 
 
 ifdef DEBUG
@@ -14,9 +24,6 @@ else
     OBJDIR := $(PLATFORM)_objn
 endif
 
-ifeq ($(PLATFORM),Linux)
-    CPP_FLAGS += -DLINUX -D_LINUX -D__LINUX__
-endif
 
 .DEFAULT : all
 
@@ -39,12 +46,12 @@ DEP_FILES := $(OBJ_FILES:.o=.d)
 $(OBJDIR)/inireader : $(OBJ_FILES) makefile
 	@if [ ! -d $(@D) ] ; then mkdir -p $(@D) ; fi
 	@echo "Linking $@"
-	@$(CPP) -o $@ $(OBJ_FILES)
+	$(CPP) -o $@ $(OBJ_FILES)
 
 $(OBJDIR)/%.o : %.cpp makefile $(OBJDIR)/%.d
 	@if [ ! -d $(@D) ] ; then mkdir -p $(@D) ; fi
 	@echo "Compiling $<"
-	@$(CPP) $(CPP_FLAGS) -o $@ $<
+	$(CPP) $(CPP_FLAGS) -o $@ $<
 
 $(OBJDIR)/%.d : %.cpp makefile
 	@if [ ! -d $(@D) ] ; then mkdir -p $(@D) ; fi
@@ -62,7 +69,7 @@ test: $(OBJDIR)/inireader
 
 # Currently only works on the mac platform.
 install: $(OBJDIR)/inireader
-	cp $(OBJDIR)/inireader ~/nexus/bin/mac
+	cp $(OBJDIR)/inireader $(INSTALL_TARGET)/
 
 
 
