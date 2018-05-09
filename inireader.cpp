@@ -269,6 +269,8 @@ int main(int argc, char *argv[])
 
                     if (e.valid() && e.name() == name) {
                         std::cout << e.value() << std::endl;
+                        // We've printed out the single value the user was after. We can quit now.
+                        done = true;
                     }
                 }
                 else if(is_section(line, section)) {
