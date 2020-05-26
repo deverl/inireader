@@ -5,3 +5,7 @@ Darwin_objn/
 Darwin_objd/
 build/
 /Debug/
+/.cproject
+/.project
+/DerivedData
+/.settings

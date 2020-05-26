@@ -1,13 +1,12 @@
 
 PLATFORM := $(shell uname)
 
+CPP := g++
 CPP_FLAGS = -c -Wall -pedantic --std=c++11 -DPLATFORM=$(PLATFORM)
 
 ifeq ($(PLATFORM),Darwin)
     INSTALL_TARGET=~/nexus/bin/mac
-    CPP := g++-8
-else
-    CPP := g++
+    PATH := /usr/local/bin:${PATH}
 endif
 
 ifeq ($(PLATFORM),Linux)
