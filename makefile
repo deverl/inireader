@@ -5,7 +5,7 @@ CPP_FLAGS = -c -Wall -pedantic --std=c++11 -DPLATFORM=$(PLATFORM)
 
 ifeq ($(PLATFORM),Darwin)
     CPP := $(shell /bin/ls -1 /usr/local/bin/g++* | sed 's/@//g' | sed 's/\/usr\/local\/bin\///g')
-    INSTALL_TARGET=~/nexus/bin/mac
+    INSTALL_TARGET=~/bin
     PATH := /usr/local/bin:${PATH}
 else
     CPP := g++
@@ -13,7 +13,7 @@ endif
 
 ifeq ($(PLATFORM),Linux)
     CPP_FLAGS += -DLINUX -D_LINUX -D__LINUX__
-    INSTALL_TARGET=~/nexus/bin/linux
+    INSTALL_TARGET=~/bin
 endif
 
 
