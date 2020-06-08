@@ -4,7 +4,7 @@ PLATFORM := $(shell uname)
 CPP_FLAGS = -c -Wall -pedantic --std=c++11 -DPLATFORM=$(PLATFORM)
 
 ifeq ($(PLATFORM),Darwin)
-    CPP := $(shell /bin/ls -1 /usr/local/bin/g++* | sed 's/@//g' | sed 's/\/usr\/local\/bin\///g')
+    CPP := $(shell /bin/ls -1 /usr/local/bin/g++* | sed 's/@//g' | sed 's/^.*g++/g++/g')
     INSTALL_TARGET=~/bin
     PATH := /usr/local/bin:${PATH}
 else
