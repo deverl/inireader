@@ -4,9 +4,10 @@ PLATFORM := $(shell uname)
 CPP_FLAGS = -c -Wall -pedantic --std=c++11 -DPLATFORM=$(PLATFORM)
 
 ifeq ($(PLATFORM),Darwin)
-    CPP := $(shell /bin/ls -1 /usr/local/bin/g++* | sed 's/@//g' | sed 's/^.*g++/g++/g')
+    BREW_HOME_DIR=`brew --prefix`
+    CPP := $(shell /bin/ls -1 $(BREW_HOME_DIR)/bin/g++* | sed 's/@//g' | sed 's/^.*g++/g++/g')
     INSTALL_TARGET=~/bin
-    PATH := /usr/local/bin:${PATH}
+    PATH := $(BREW_HOME_DIR)/bin:${PATH}
 else
     CPP := g++
 endif
