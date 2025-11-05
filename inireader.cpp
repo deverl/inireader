@@ -25,7 +25,8 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-
+#include <algorithm>
+#include <cctype>
 
 
 
@@ -86,9 +87,8 @@ protected:
 
 
 
-#include <algorithm>
-#include <string>
-#include <cctype>
+
+// Performs a case insensitive comparison of two strings.
 
 bool iequals(const std::string& a, const std::string& b) {
     if(a.size() != b.size())
