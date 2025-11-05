@@ -85,6 +85,25 @@ protected:
 
 
 
+
+#include <algorithm>
+#include <string>
+#include <cctype>
+
+bool iequals(const std::string& a, const std::string& b) {
+    if(a.size() != b.size())
+    {
+        std::cout << '"' << a << '"' << " and \"" << b << "\" have different lengths" << std::endl;
+        return false;
+    }
+
+    return std::equal(a.begin(), a.end(), b.begin(),
+                  [](char a, char b) { return std::tolower(static_cast<unsigned char>(a))
+                                           == std::tolower(static_cast<unsigned char>(b)); });
+}
+
+
+
 // Remove leading and trailing whitespace from a string.
 
 std::string trim(const std::string& str)
@@ -166,10 +185,7 @@ bool is_section(const std::string& str, const std::string& section_name)
             if(str[0] == '[' && str[section_name_length + 1] == ']')
             {
                 std::string sub(str.substr(1, section_name_length));
-                if(sub == section_name)
-                {
-                    ret = true;
-                }
+                ret = iequals(sub, section_name);
             }
         }
     }
