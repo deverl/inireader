@@ -19,6 +19,12 @@
 //
 // $ inireader sample.ini  CLIENT  phone
 //
+// Both the section name and the key name comparisons disregard differences in case, so
+// all of the following would work also:
+// $ inireader sample.ini  client  phone
+// $ inireader sample.ini  client  PHONE
+// $ inireader sample.ini  CLIENT  PHONE
+//
 // The phone number would be printed on the terminal
 
 
