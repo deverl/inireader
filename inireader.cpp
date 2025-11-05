@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
                 else if (in_section) {
                     parse_section_entry(line, e);
 
-                    if (e.valid() && e.name() == name) {
+                    if (e.valid() && iequals(e.name(), name)) {
                         std::cout << e.value() << std::endl;
                         // We've printed out the single value the user was after. We can quit now.
                         done = true;
