@@ -93,7 +93,6 @@ protected:
 bool iequals(const std::string& a, const std::string& b) {
     if(a.size() != b.size())
     {
-        std::cout << '"' << a << '"' << " and \"" << b << "\" have different lengths" << std::endl;
         return false;
     }
 
