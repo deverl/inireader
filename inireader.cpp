@@ -37,49 +37,39 @@
 
 
 // Contains a name value pair, as parsed by the parse_section_entry() function.
-class Entry
-{
+class Entry {
 public:
-    Entry()
-    {
-    }
+    Entry() { }
 
-    Entry(const std::string& name, const std::string& value)
-    {
+    Entry(const std::string& name, const std::string& value) {
         this->n = name;
         this->v = value;
     }
 
 public:
-    bool valid()
-    {
+    bool valid() {
         return !n.empty() && !v.empty();
     }
 
-    void clear()
-    {
+    void clear() {
         this->n.clear();
         this->v.clear();
     }
 
-    std::string name()
-    {
+    std::string name() {
         return this->n;
     }
 
-    std::string value()
-    {
+    std::string value() {
         return this->v;
     }
 
 protected:
-    void set_name(const std::string& name)
-    {
+    void set_name(const std::string& name) {
         this->n = name;
     }
 
-    void set_value(const std::string& value)
-    {
+    void set_value(const std::string& value) {
         this->v = value;
     }
 
@@ -95,8 +85,7 @@ protected:
 // Performs a case insensitive comparison of two strings.
 
 bool iequals(const std::string& a, const std::string& b) {
-    if(a.size() != b.size())
-    {
+    if(a.size() != b.size()) {
         return false;
     }
 
@@ -122,8 +111,7 @@ std::string trim(const std::string& str) {
 // Removes leading and trailing quotes from the string (if both are present)
 
 std::string unquote(std::string_view str) {
-    if (str.size() >= 2 && str.front() == '"' && str.back() == '"')
-    {
+    if (str.size() >= 2 && str.front() == '"' && str.back() == '"') {
         str.remove_prefix(1);
         str.remove_suffix(1);
     }
@@ -134,12 +122,10 @@ std::string unquote(std::string_view str) {
 // Gets the next non-empty, non-comment line from the file.
 // Returns the string length of the fetched line.
 
-int get_line(std::ifstream& f, std::string& line)
-{
+int get_line(std::ifstream& f, std::string& line) {
     line.clear();
 
-    while(f.good() && !f.eof())
-    {
+    while(f.good() && !f.eof()) {
         std::getline(f, line);
         line = trim(line);
         if (line.empty()) {
@@ -163,16 +149,13 @@ int get_line(std::ifstream& f, std::string& line)
 // with '[' and ends with ']') AND if the string between the brackets matches
 // the specified section name.
 
-bool is_section(const std::string& str, const std::string& section_name)
-{
+bool is_section(const std::string& str, const std::string& section_name) {
     bool ret(false);
 
-    if (!str.empty() && !section_name.empty())
-    {
+    if (!str.empty() && !section_name.empty()) {
         std::string::size_type section_name_length = section_name.length();
         if (str.length() >= section_name_length + 2) {
-            if(str[0] == '[' && str[section_name_length + 1] == ']')
-            {
+            if(str[0] == '[' && str[section_name_length + 1] == ']') {
                 std::string sub(str.substr(1, section_name_length));
                 ret = iequals(sub, section_name);
             }
@@ -188,20 +171,16 @@ bool is_section(const std::string& str, const std::string& section_name)
 // Parses a section entry (if it is an entry) and sets the values in an instance of Entry which becomes the return value.
 // If the section is not an entry, nullptr is returned.
 
-bool parse_section_entry(const std::string& line, Entry& e)
-{
+bool parse_section_entry(const std::string& line, Entry& e) {
     e.clear();
     std::string trimmed = trim(line);
-    if (!trimmed.empty())
-    {
+    if (!trimmed.empty()) {
         auto pos = trimmed.find('=');
-        if (pos != std::string::npos)
-        {
+        if (pos != std::string::npos) {
             std::string name = trim(trimmed.substr(0, pos));
             std::string value = unquote(trim(trimmed.substr(pos + 1)));
 
-            if (!name.empty())
-            {
+            if (!name.empty()) {
                 e.set_name(name);
                 e.set_value(value);
                 return true;
@@ -210,7 +189,6 @@ bool parse_section_entry(const std::string& line, Entry& e)
     }
     return false;
 }
-
 
 
 

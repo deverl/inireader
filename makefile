@@ -68,6 +68,9 @@ clean:
 
 test: $(OBJDIR)/inireader
 	$(OBJDIR)/inireader sample.ini  CLIENT   phone
+	$(OBJDIR)/inireader sample.ini  client   PHONE
+	$(OBJDIR)/inireader sample.ini  user     email
+	$(OBJDIR)/inireader sample.ini  USER     USERNAME
 
 
 # Currently only works on the mac platform.
