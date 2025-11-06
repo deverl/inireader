@@ -7,12 +7,12 @@
 //
 //     --------------------------------------------------------------------
 //     ; File: sample.ini
-// 
+//
 //     [USER]
 //     email = "somebody@domain.com"
 //     [CLIENT]
 //     phone = "555-555-1212"
-// 
+//
 //     --------------------------------------------------------------------
 //
 // You could read the client's phone number using this command:
@@ -33,7 +33,6 @@
 #include <string>
 #include <algorithm>
 #include <cctype>
-
 
 
 // Contains a name value pair, as parsed by the parse_section_entry() function.
@@ -92,8 +91,6 @@ protected:
 
 
 
-
-
 // Performs a case insensitive comparison of two strings.
 
 bool iequals(const std::string& a, const std::string& b) {
@@ -124,23 +121,16 @@ std::string trim(const std::string& str)
 
 
 
-
-
-
 // Removes leading and trailing quotes from the string (if both are present)
-std::string unquote(const std::string& str) {
-    if (!str.empty()) {
-        const char quote('"');
-        if (str[0] == quote && str[str.length() - 1] == quote)
-        {
-            return str.substr(1, str.length() - 2);
-        }
+
+std::string unquote(std::string_view str) {
+    if (str.size() >= 2 && str.front() == '"' && str.back() == '"')
+    {
+        str.remove_prefix(1);
+        str.remove_suffix(1);
     }
-    return str;
+    return std::string(str);
 }
-
-
-
 
 
 // Gets the next non-empty, non-comment line from the file.
@@ -152,16 +142,12 @@ int get_line(std::ifstream& f, std::string& line)
     while(f.good() && !f.eof())
     {
         std::getline(f, line);
-        if (line.empty()) {
-            // The line was completely empty.
-            continue;
-        }
         line = trim(line);
         if (line.empty()) {
-            // The line consisted only of whitespace.
+            // The line was completely empty, or consisted only of whitespace
             continue;
         }
-        if(line[0] == ';') {
+        if(line.starts_with(';')) {
             // This is a comment line.
             continue;
         }
@@ -174,8 +160,6 @@ int get_line(std::ifstream& f, std::string& line)
 
 
 
-
-
 // Returns true if the given str is a section entry from an ini file (begins
 // with '[' and ends with ']') AND if the string between the brackets matches
 // the specified section name.
@@ -183,7 +167,7 @@ bool is_section(const std::string& str, const std::string& section_name)
 {
     bool ret(false);
 
-    if (!str.empty() && !section_name.empty()) 
+    if (!str.empty() && !section_name.empty())
     {
         std::string::size_type section_name_length = section_name.length();
         if (str.length() >= section_name_length + 2) {
@@ -203,50 +187,29 @@ bool is_section(const std::string& str, const std::string& section_name)
 
 // Parses a section entry (if it is an entry) and sets the values in an instance of Entry which becomes the return value.
 // If the section is not an entry, nullptr is returned.
+
 bool parse_section_entry(const std::string& line, Entry& e)
 {
     e.clear();
-    // First, make sure that the line contains an '=' character.
-
-    std::string::size_type idx(line.find_first_of('='));
-
-    if (idx != std::string::npos)
+    std::string trimmed = trim(line);
+    if (!trimmed.empty())
     {
-        std::string s(trim(line));
-
-        if(!s.empty())
+        auto pos = trimmed.find('=');
+        if (pos != std::string::npos)
         {
-            // Read the first token. This is up to the first '=' character, and after stripping whitespace.
-
-            std::string name;
-
-            int i(0);
-
-            while(s[i] != '=') {
-                name += s[i];
-                ++i;
+            std::string name = trim(trimmed.substr(0, pos));
+            std::string value = unquote(trim(trimmed.substr(pos + 1)));
+        
+            if (!name.empty())
+            {
+                e.set_name(name);
+                e.set_value(value);
+                return true;
             }
-
-            name = trim(name);
-
-            // We'll assume that everything after the '=' character is the value (after trimming whitespace).
-
-            s = s.substr(i + 1);
-
-            s = unquote(trim(s));
-
-            e.set_name(name);
-            e.set_value(s);
-
-            return true;
         }
     }
-
     return false;
 }
-
-
-
 
 
 
@@ -278,7 +241,7 @@ int main(int argc, char *argv[])
                     // Just continue and f.eof() should terminate the loop on the next iteration.
                     continue;
                 }
-                if(line[0] == '[' && in_section) {
+                if (line.starts_with('[') && in_section) {
                     // This is the beginning of a section, and we were already processing our target section.
                     in_section = false;
                     // We've read the section and not found the result.

@@ -4,7 +4,7 @@ PLATFORM := $(shell uname)
 INSTALL_TARGET=~/bin
 
 
-CPP_FLAGS = -c -Wall -pedantic --std=c++11 -DPLATFORM=$(PLATFORM)
+CPP_FLAGS = -c -Wall -pedantic --std=c++20 -DPLATFORM=$(PLATFORM)
 
 ifeq ($(PLATFORM),Darwin)
     BREW_HOME_DIR=`brew --prefix`
@@ -39,7 +39,7 @@ dep : $(DEP_FILES)
 
 -include $(OBJ_FILES:.o=.d)
 
-CPP_SRC_FILES := inireader.cpp 
+CPP_SRC_FILES := inireader.cpp
 
 OBJ_LIST := $(CPP_SRC_FILES:.cpp=.o) $(C_SRC_FILES:.c=.o)
 OBJ_FILES := $(addprefix $(OBJDIR)/, $(OBJ_LIST))
