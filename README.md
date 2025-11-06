@@ -3,7 +3,7 @@
 This command line program just reads a named value from a section in an ini
 file.
 
-**usage**: inireader <path-to-ini-file>  <section-name>  <value-name>
+**usage**: `inireader <path-to-ini-file>  <section-name>  <value-name>`
 
 For example, if the ini file was as shown here:
 
