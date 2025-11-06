@@ -33,6 +33,7 @@
 #include <string>
 #include <algorithm>
 #include <cctype>
+#include <filesystem>
 
 
 // Contains a name value pair, as parsed by the parse_section_entry() function.
@@ -108,15 +109,12 @@ bool iequals(const std::string& a, const std::string& b) {
 
 // Remove leading and trailing whitespace from a string.
 
-std::string trim(const std::string& str)
-{
-    size_t first = str.find_first_not_of(" \t");
-    if (std::string::npos == first)
-    {
-        return str;
-    }
-    size_t last = str.find_last_not_of(" \t");
-    return str.substr(first, (last - first + 1));
+std::string trim(const std::string& str) {
+    auto first = std::find_if_not(str.begin(), str.end(),
+                                  [](unsigned char c){ return std::isspace(c); });
+    auto last = std::find_if_not(str.rbegin(), str.rend(),
+                                 [](unsigned char c){ return std::isspace(c); }).base();
+    return (first < last) ? std::string(first, last) : std::string();
 }
 
 
@@ -135,6 +133,7 @@ std::string unquote(std::string_view str) {
 
 // Gets the next non-empty, non-comment line from the file.
 // Returns the string length of the fetched line.
+
 int get_line(std::ifstream& f, std::string& line)
 {
     line.clear();
@@ -163,6 +162,7 @@ int get_line(std::ifstream& f, std::string& line)
 // Returns true if the given str is a section entry from an ini file (begins
 // with '[' and ends with ']') AND if the string between the brackets matches
 // the specified section name.
+
 bool is_section(const std::string& str, const std::string& section_name)
 {
     bool ret(false);
@@ -199,7 +199,7 @@ bool parse_section_entry(const std::string& line, Entry& e)
         {
             std::string name = trim(trimmed.substr(0, pos));
             std::string value = unquote(trim(trimmed.substr(pos + 1)));
-        
+
             if (!name.empty())
             {
                 e.set_name(name);
@@ -213,67 +213,50 @@ bool parse_section_entry(const std::string& line, Entry& e)
 
 
 
-int main(int argc, char *argv[])
-{
-    int ret(0);
-    
-    if(argc == 4)
-    {
-        std::string path(argv[1]);
-        std::string section(argv[2]);
-        std::string name(argv[3]);
 
-        std::ifstream f(path);
 
-        if(f.good())
-        {
-            std::string line;
-            bool done(false);
-            bool in_section(false);
-            Entry e;
 
-            while(!done && f.good() && !f.eof())
-            {
-                get_line(f, line);
+int main(int argc, char* argv[]) {
+    if (argc != 4) {
+        std::cerr << "Usage: " << argv[0] << " <path> <section> <name>\n";
+        return 1;
+    }
 
-                if (line.empty()) {
-                    // The line was completely empty. If this happens, we should be at the end of the file.
-                    // Just continue and f.eof() should terminate the loop on the next iteration.
-                    continue;
-                }
-                if (line.starts_with('[') && in_section) {
-                    // This is the beginning of a section, and we were already processing our target section.
-                    in_section = false;
-                    // We've read the section and not found the result.
-                    done = true;
-                    continue;
-                }
-                else if (in_section) {
-                    parse_section_entry(line, e);
+    const std::filesystem::path path(argv[1]);
+    const std::string section(argv[2]);
+    const std::string name(argv[3]);
 
-                    if (e.valid() && iequals(e.name(), name)) {
-                        std::cout << e.value() << std::endl;
-                        // We've printed out the single value the user was after. We can quit now.
-                        done = true;
-                    }
-                }
-                else if(is_section(line, section)) {
-                    // This is the beginning of our target section.
-                    in_section = true;
-                    continue;
-                }
+    std::ifstream file(path);
+    if (!file) {
+        std::cerr << "Error: could not open file \"" << path.string() << "\"\n";
+        return 3;
+    }
+
+    std::string line;
+    bool in_section = false;
+    Entry entry;
+
+    while (std::getline(file, line)) {
+        if (line.empty()) continue;
+
+        if (line.starts_with('[')) {
+            // new section starts
+            if (in_section) break; // exiting target section
+            if (is_section(line, section)) {
+                in_section = true;
+            }
+            continue;
+        }
+
+        if (in_section && parse_section_entry(line, entry)) {
+            if (entry.valid() && iequals(entry.name(), name)) {
+                std::cout << entry.value() << '\n';
+                return 0; // found the target, done
             }
         }
-        else
-        {
-            std::cerr << "Couldn't open file " << path << " for reading" << std::endl;
-            ret = 3;
-        }
-    }
-    else {
-        std::cerr << "Invalid usage. You must supply three parameters: <path> <section> <name>." << std::endl;
-        ret = 1;
     }
 
-    return ret;
+    // If we got here, we never found the name
+    std::cerr << "Entry \"" << name << "\" not found in section [" << section << "]\n";
+    return 2;
 }
