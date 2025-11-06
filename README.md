@@ -8,6 +8,7 @@ file.
 For example, if the ini file was as shown here:
 
 --------------------------------------------------------------------
+```
   ; File: sample.ini
   ;
   ; This is just the sample ini file used for testing inireader.
@@ -24,18 +25,20 @@ For example, if the ini file was as shown here:
   city = "Boise"
   state = "ID"
   zip = "83713"
+```
 --------------------------------------------------------------------
 
 You could read the client's phone number using this command:
-
+```
 $ inireader sample.ini  CLIENT  phone
-
+```
 Both the section name and the key name comparisons disregard differences in case, so
 all of the following would work also:
+```
 $ inireader sample.ini  client  phone
 $ inireader sample.ini  client  PHONE
 $ inireader sample.ini  CLIENT  PHONE
-
+```
 The phone number would be printed on the terminal
 
 ## Use in a Script
