@@ -31,210 +31,132 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <string_view>
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
 
+using namespace std;
 
-// Contains a name value pair, as parsed by the parse_section_entry() function.
+// Represents a name-value pair parsed from an INI file line.
 class Entry {
 public:
-    Entry() { }
+    Entry() = default;
+    Entry(string name, string value)
+        : n(move(name)), v(move(value)) {}
 
-    Entry(const std::string& name, const std::string& value) {
-        this->n = name;
-        this->v = value;
-    }
-
-public:
-    bool valid() {
+    [[nodiscard]] bool valid() const noexcept {
         return !n.empty() && !v.empty();
     }
 
-    void clear() {
-        this->n.clear();
-        this->v.clear();
+    void clear() noexcept {
+        n.clear();
+        v.clear();
     }
 
-    std::string name() {
-        return this->n;
-    }
+    [[nodiscard]] const string& name() const noexcept { return n; }
+    [[nodiscard]] const string& value() const noexcept { return v; }
 
-    std::string value() {
-        return this->v;
-    }
+    friend bool parse_section_entry(const string& line, Entry& e);
 
-protected:
-    void set_name(const std::string& name) {
-        this->n = name;
-    }
-
-    void set_value(const std::string& value) {
-        this->v = value;
-    }
-
-    friend bool parse_section_entry(const std::string& line, Entry& e);
-
-protected:
-    std::string n;
-    std::string v;
+private:
+    string n;
+    string v;
 };
 
+// Case-insensitive string comparison
+[[nodiscard]] bool iequals(string_view a, string_view b) noexcept {
+    return a.size() == b.size() &&
+           equal(a.begin(), a.end(), b.begin(),
+                 [](unsigned char x, unsigned char y) {
+                     return tolower(x) == tolower(y);
+                 });
+}
 
+// Trim leading/trailing whitespace
+[[nodiscard]] string trim(string_view sv) {
+    auto is_not_space = [](unsigned char c) { return !isspace(c); };
+    auto start = find_if(sv.begin(), sv.end(), is_not_space);
+    auto end = find_if(sv.rbegin(), sv.rend(), is_not_space).base();
+    return (start < end) ? string(start, end) : string{};
+}
 
-// Performs a case insensitive comparison of two strings.
-
-bool iequals(const std::string& a, const std::string& b) {
-    if(a.size() != b.size()) {
-        return false;
+// Remove surrounding quotes if present
+[[nodiscard]] string unquote(string_view sv) {
+    if (sv.size() >= 2 && sv.front() == '"' && sv.back() == '"') {
+        sv.remove_prefix(1);
+        sv.remove_suffix(1);
     }
-
-    return std::equal(a.begin(), a.end(), b.begin(),
-                  [](char a, char b) { return std::tolower(static_cast<unsigned char>(a))
-                                           == std::tolower(static_cast<unsigned char>(b)); });
+    return string(sv);
 }
 
-
-
-// Remove leading and trailing whitespace from a string.
-
-std::string trim(const std::string& str) {
-    auto first = std::find_if_not(str.begin(), str.end(),
-                                  [](unsigned char c){ return std::isspace(c); });
-    auto last = std::find_if_not(str.rbegin(), str.rend(),
-                                 [](unsigned char c){ return std::isspace(c); }).base();
-    return (first < last) ? std::string(first, last) : std::string();
-}
-
-
-
-// Removes leading and trailing quotes from the string (if both are present)
-
-std::string unquote(std::string_view str) {
-    if (str.size() >= 2 && str.front() == '"' && str.back() == '"') {
-        str.remove_prefix(1);
-        str.remove_suffix(1);
-    }
-    return std::string(str);
-}
-
-
-// Gets the next non-empty, non-comment line from the file.
-// Returns the string length of the fetched line.
-
-int get_line(std::ifstream& f, std::string& line) {
-    line.clear();
-
-    while(f.good() && !f.eof()) {
-        std::getline(f, line);
-        line = trim(line);
-        if (line.empty()) {
-            // The line was completely empty, or consisted only of whitespace
-            continue;
-        }
-        if(line.starts_with(';')) {
-            // This is a comment line.
-            continue;
-        }
-        return line.length();
-    }
-
-    return 0;
-}
-
-
-
-
-// Returns true if the given str is a section entry from an ini file (begins
-// with '[' and ends with ']') AND if the string between the brackets matches
-// the specified section name.
-
-bool is_section(const std::string& str, const std::string& section_name) {
-    bool ret(false);
-
-    if (!str.empty() && !section_name.empty()) {
-        std::string::size_type section_name_length = section_name.length();
-        if (str.length() >= section_name_length + 2) {
-            if(str[0] == '[' && str[section_name_length + 1] == ']') {
-                std::string sub(str.substr(1, section_name_length));
-                ret = iequals(sub, section_name);
-            }
-        }
-    }
-
-    return ret;
-}
-
-
-
-
-// Parses a section entry (if it is an entry) and sets the values in an instance of Entry which becomes the return value.
-// If the section is not an entry, nullptr is returned.
-
-bool parse_section_entry(const std::string& line, Entry& e) {
+// Parse a line as a key=value entry; returns true if successful
+bool parse_section_entry(const string& line, Entry& e) {
     e.clear();
-    std::string trimmed = trim(line);
-    if (!trimmed.empty()) {
-        auto pos = trimmed.find('=');
-        if (pos != std::string::npos) {
-            std::string name = trim(trimmed.substr(0, pos));
-            std::string value = unquote(trim(trimmed.substr(pos + 1)));
+    string trimmed = trim(line);
+    if (trimmed.empty()) return false;
 
-            if (!name.empty()) {
-                e.set_name(name);
-                e.set_value(value);
-                return true;
-            }
+    if (auto pos = trimmed.find('='); pos != string::npos) {
+        string name = trim(trimmed.substr(0, pos));
+        string value = unquote(trim(trimmed.substr(pos + 1)));
+
+        if (!name.empty()) {
+            e = Entry{move(name), move(value)};
+            return true;
         }
     }
     return false;
 }
 
+// Check if a line represents the desired section header [Section]
+[[nodiscard]] bool is_section(const string& line, string_view section_name) {
+    if (line.size() < 3 || line.front() != '[' || line.back() != ']')
+        return false;
 
+    string inner = trim(line.substr(1, line.size() - 2));
+    return iequals(inner, section_name);
+}
 
-
-
+// Main program
 int main(int argc, char* argv[]) {
     if (argc != 4) {
-        std::cerr << "Usage: " << argv[0] << " <path> <section> <name>\n";
+        cerr << "Usage: " << argv[0] << " <path> <section> <name>\n";
         return 1;
     }
 
-    const std::filesystem::path path(argv[1]);
-    const std::string section(argv[2]);
-    const std::string name(argv[3]);
+    const filesystem::path path(argv[1]);
+    const string section(argv[2]);
+    const string name(argv[3]);
 
-    std::ifstream file(path);
+    ifstream file(path);
     if (!file) {
-        std::cerr << "Error: could not open file \"" << path.string() << "\"\n";
+        cerr << "Error: could not open file \"" << path.string() << "\"\n";
         return 3;
     }
 
-    std::string line;
+    string line;
     bool in_section = false;
     Entry entry;
 
-    while (std::getline(file, line)) {
-        if (line.empty()) continue;
+    while (getline(file, line)) {
+        string trimmed = trim(line);
+        if (trimmed.empty() || trimmed.starts_with(';') || trimmed.starts_with('#'))
+            continue;
 
-        if (line.starts_with('[')) {
-            // new section starts
-            if (in_section) break; // exiting target section
-            if (is_section(line, section)) {
-                in_section = true;
-            }
+        if (trimmed.starts_with('[') && trimmed.ends_with(']')) {
+            if (in_section) break; // leaving target section
+            in_section = is_section(trimmed, section);
             continue;
         }
 
-        if (in_section && parse_section_entry(line, entry)) {
+        if (in_section && parse_section_entry(trimmed, entry)) {
             if (entry.valid() && iequals(entry.name(), name)) {
-                std::cout << entry.value() << '\n';
-                return 0; // found the target, done
+                cout << entry.value() << '\n';
+                return 0;
             }
         }
     }
 
-    // If we got here, we never found the name
-    std::cerr << "Entry \"" << name << "\" not found in section [" << section << "]\n";
+    cerr << "Entry \"" << name << "\" not found in section [" << section << "]\n";
     return 2;
 }
