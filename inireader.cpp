@@ -43,7 +43,7 @@ class Entry {
 public:
     Entry() = default;
     Entry(string name, string value)
-        : n(move(name)), v(move(value)) {}
+        : n(std::move(name)), v(std::move(value)) {}
 
     [[nodiscard]] bool valid() const noexcept {
         return !n.empty() && !v.empty();
@@ -101,7 +101,7 @@ bool parse_section_entry(const string& line, Entry& e) {
         string value = unquote(trim(trimmed.substr(pos + 1)));
 
         if (!name.empty()) {
-            e = Entry{move(name), move(value)};
+            e = Entry{std::move(name), std::move(value)};
             return true;
         }
     }
