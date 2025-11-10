@@ -27,14 +27,13 @@
 //
 // The phone number would be printed on the terminal
 
-
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <string_view>
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <string_view>
 
 using namespace std;
 
@@ -43,7 +42,8 @@ class Entry {
 public:
     Entry() = default;
     Entry(string name, string value)
-        : n(std::move(name)), v(std::move(value)) {}
+        : n(std::move(name))
+        , v(std::move(value)) { }
 
     [[nodiscard]] bool valid() const noexcept {
         return !n.empty() && !v.empty();
@@ -57,7 +57,7 @@ public:
     [[nodiscard]] const string& name() const noexcept { return n; }
     [[nodiscard]] const string& value() const noexcept { return v; }
 
-    friend bool parse_section_entry(const string& line, Entry& e);
+    friend bool                 parse_section_entry(const string& line, Entry& e);
 
 private:
     string n;
@@ -66,19 +66,17 @@ private:
 
 // Case-insensitive string comparison
 [[nodiscard]] bool iequals(string_view a, string_view b) noexcept {
-    return a.size() == b.size() &&
-           equal(a.begin(), a.end(), b.begin(),
-                 [](unsigned char x, unsigned char y) {
-                     return tolower(x) == tolower(y);
-                 });
+    return a.size() == b.size() && equal(a.begin(), a.end(), b.begin(), [](unsigned char x, unsigned char y) {
+               return tolower(x) == tolower(y);
+           });
 }
 
 // Trim leading/trailing whitespace
 [[nodiscard]] string trim(string_view sv) {
     auto is_not_space = [](unsigned char c) { return !isspace(c); };
-    auto start = find_if(sv.begin(), sv.end(), is_not_space);
-    auto end = find_if(sv.rbegin(), sv.rend(), is_not_space).base();
-    return (start < end) ? string(start, end) : string{};
+    auto start        = find_if(sv.begin(), sv.end(), is_not_space);
+    auto end          = find_if(sv.rbegin(), sv.rend(), is_not_space).base();
+    return (start < end) ? string(start, end) : string {};
 }
 
 // Remove surrounding quotes if present
@@ -94,14 +92,16 @@ private:
 bool parse_section_entry(const string& line, Entry& e) {
     e.clear();
     string trimmed = trim(line);
-    if (trimmed.empty()) return false;
+    if (trimmed.empty()) {
+        return false;
+    }
 
     if (auto pos = trimmed.find('='); pos != string::npos) {
-        string name = trim(trimmed.substr(0, pos));
+        string name  = trim(trimmed.substr(0, pos));
         string value = unquote(trim(trimmed.substr(pos + 1)));
 
         if (!name.empty()) {
-            e = Entry{std::move(name), std::move(value)};
+            e = Entry { std::move(name), std::move(value) };
             return true;
         }
     }
@@ -110,8 +110,9 @@ bool parse_section_entry(const string& line, Entry& e) {
 
 // Check if a line represents the desired section header [Section]
 [[nodiscard]] bool is_section(const string& line, string_view section_name) {
-    if (line.size() < 3 || line.front() != '[' || line.back() != ']')
+    if (line.size() < 3 || line.front() != '[' || line.back() != ']') {
         return false;
+    }
 
     string inner = trim(line.substr(1, line.size() - 2));
     return iequals(inner, section_name);
@@ -125,26 +126,29 @@ int main(int argc, char* argv[]) {
     }
 
     const filesystem::path path(argv[1]);
-    const string section(argv[2]);
-    const string name(argv[3]);
+    const string           section(argv[2]);
+    const string           name(argv[3]);
 
-    ifstream file(path);
+    ifstream               file(path);
     if (!file) {
         cerr << "Error: could not open file \"" << path.string() << "\"\n";
         return 3;
     }
 
     string line;
-    bool in_section = false;
-    Entry entry;
+    bool   in_section = false;
+    Entry  entry;
 
     while (getline(file, line)) {
         string trimmed = trim(line);
-        if (trimmed.empty() || trimmed.starts_with(';') || trimmed.starts_with('#'))
+        if (trimmed.empty() || trimmed.starts_with(';') || trimmed.starts_with('#')) {
             continue;
+        }
 
         if (trimmed.starts_with('[') && trimmed.ends_with(']')) {
-            if (in_section) break; // leaving target section
+            if (in_section) {
+                break; // leaving target section
+            }
             in_section = is_section(trimmed, section);
             continue;
         }
