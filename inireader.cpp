@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
 
         if (in_section && parse_section_entry(trimmed, entry)) {
             if (entry.valid() && iequals(entry.name(), name)) {
-                cout << entry.value() << '\n';
+                cout << entry.value();
                 return 0;
             }
         }
