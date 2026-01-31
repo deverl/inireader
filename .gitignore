@@ -4,6 +4,7 @@ inireader
 Darwin_objn/
 Darwin_objd/
 build/
+builddebug/
 /Debug/
 /.cproject
 /.project

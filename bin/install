@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [ ! -f build/inireader ]
+then
+    bin/build
+fi
+
+
+if [ ! -f build/inireader ]
+then
+    echo "WARNING: Can't find build/inireader!"
+    exit 1
+fi
+
+
+echo "Copying build/inireader ~/bin"
+cp build/inireader ~/bin
+
